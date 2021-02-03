@@ -1,0 +1,35 @@
+# Import scrapy
+import scrapy
+# Import the CrawlerProcess: for running the spider
+from scrapy.crawler import CrawlerProcess
+
+# Create the Spider class
+class Aptagen_Spider(scrapy.Spider):
+  name = "aptagen_spider"
+  # start_requests method
+  def start_requests(self):
+    urls='https://www.aptagen.com/aptamer-index'
+    yield scrapy.Request(url = urls , callback = self.parse)
+ # Parsing the front page
+  def parse(self, response):
+    Apta_blocks = response.css('div.result-item')
+    Apta_links = Apta_blocks.xpath('./a/@href')
+    links_to_follow = Apta_links.extract()
+    for url in links_to_follow:
+         yield response.follow(url = url,callback = self.parse_pages)   
+  def parse_pages(self, response):
+    Sequence=response.css('span.apta-sequence>*::text').extract()
+    Target= response.css('div.aptamer-detail>div.img-container>span:nth-of-type(2)::text').extract()
+    Apta_dict[tuple(Sequence)] =Target
+    
+
+# Initialize the dictionary **outside** of the Spider class
+Apta_dict = dict()
+
+# Run the Spider
+process = CrawlerProcess()
+process.crawl(Aptagen_Spider)
+process.start()    
+
+for keys,values in Apta_dict.items():
+    print(keys, values) 
